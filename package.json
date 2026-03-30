@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint app lib next.config.ts eslint.config.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "firebase": "^12.11.0",
