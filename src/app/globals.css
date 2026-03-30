@@ -24,3 +24,8 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+button[class*="bg-slate-950"],
+a[class*="bg-slate-950"] {
+  color: #ffffff;
+}

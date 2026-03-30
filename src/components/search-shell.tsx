@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { AuthPrompt } from "@/components/auth-prompt";
 import { FilterPanel } from "@/components/filter-panel";
 import { MapPreview } from "@/components/map-preview";
 import { ToiletCard } from "@/components/toilet-card";
@@ -102,6 +104,17 @@ export function SearchShell() {
         <FilterPanel filters={filters} onChange={setFilters} />
 
         <div className="space-y-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <AuthPrompt />
+
+            <Link
+              href="/auth"
+              className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300"
+            >
+              Add toilet or review
+            </Link>
+          </div>
+
           <MapPreview toilets={toilets} />
 
           <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
