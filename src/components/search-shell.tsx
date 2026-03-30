@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AuthPrompt } from "@/components/auth-prompt";
 import { FilterPanel } from "@/components/filter-panel";
+import { fetchToilets } from "@/lib/firebase/firestore";
 import { MapPreview } from "@/components/map-preview";
 import { ToiletCard } from "@/components/toilet-card";
 import { filterToilets } from "@/lib/filter-toilets";
 import { getManualLocation } from "@/lib/location";
 import {
   defaultUserLocation,
-  mockToilets,
+  type ToiletRecord,
   type ToiletFilters,
   type UserLocation,
 } from "@/lib/toilets";
@@ -26,15 +27,44 @@ export function SearchShell() {
   const [manualLocation, setManualLocation] = useState(defaultUserLocation.label);
   const [userLocation, setUserLocation] = useState<UserLocation>(defaultUserLocation);
   const [filters, setFilters] = useState<ToiletFilters>(initialFilters);
+  const [sourceToilets, setSourceToilets] = useState<ToiletRecord[]>([]);
   const [locationState, setLocationState] = useState<
     "idle" | "locating" | "found" | "manual"
   >("idle");
+  const [dataState, setDataState] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
     setUserLocation(getManualLocation(manualLocation));
   }, [manualLocation]);
 
-  const toilets = filterToilets(mockToilets, filters, userLocation);
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadToilets() {
+      try {
+        const nextToilets = await fetchToilets();
+
+        if (isCancelled) {
+          return;
+        }
+
+        setSourceToilets(nextToilets);
+        setDataState("ready");
+      } catch {
+        if (!isCancelled) {
+          setDataState("error");
+        }
+      }
+    }
+
+    void loadToilets();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  const toilets = filterToilets(sourceToilets, filters, userLocation);
 
   function detectLocation() {
     if (!navigator.geolocation) {
@@ -129,11 +159,24 @@ export function SearchShell() {
             </div>
 
             <div className="mt-5 grid gap-4">
+              {dataState === "loading" ? (
+                <div className="rounded-[1.75rem] border border-dashed border-slate-200 px-5 py-10 text-center text-sm text-slate-500">
+                  Loading toilets from Firestore...
+                </div>
+              ) : null}
+
+              {dataState === "error" ? (
+                <div className="rounded-[1.75rem] border border-amber-200 bg-amber-50 px-5 py-10 text-center text-sm text-amber-900">
+                  We couldn&apos;t load toilets from Firestore. Check the rules,
+                  seeded docs, and browser console for details.
+                </div>
+              ) : null}
+
               {toilets.map((toilet) => (
                 <ToiletCard key={toilet.id} toilet={toilet} />
               ))}
 
-              {toilets.length === 0 ? (
+              {dataState === "ready" && toilets.length === 0 ? (
                 <div className="rounded-[1.75rem] border border-dashed border-slate-200 px-5 py-10 text-center text-sm text-slate-500">
                   No toilets match those filters yet. Try lowering the minimum
                   cleanliness rating.
