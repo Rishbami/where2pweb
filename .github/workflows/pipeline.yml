@@ -33,7 +33,7 @@ jobs:
 
       - name: Detect app test script
         id: app-test-script
-        run: echo "exists=$(node -p \"Boolean(require('./package.json').scripts?.test)\")" >> "$GITHUB_OUTPUT"
+        run: node -e 'process.stdout.write(`exists=${Boolean(require("./package.json").scripts?.test)}\n`)' >> "$GITHUB_OUTPUT"
 
       - name: Lint app
         run: npm run lint
@@ -72,7 +72,7 @@ jobs:
 
       - name: Detect functions test script
         id: functions-test-script
-        run: echo "exists=$(node -p \"Boolean(require('./package.json').scripts?.test)\")" >> "$GITHUB_OUTPUT"
+        run: node -e 'process.stdout.write(`exists=${Boolean(require("./package.json").scripts?.test)}\n`)' >> "$GITHUB_OUTPUT"
 
       - name: Lint functions
         run: npm run lint
@@ -86,7 +86,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/development'
     needs:
       - app-ci
-      - functions-ci
     runs-on: ubuntu-latest
     environment: Development
     env:
@@ -120,7 +119,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       - app-ci
-      - functions-ci
     runs-on: ubuntu-latest
     environment: Production
     env:
@@ -153,7 +151,6 @@ jobs:
     name: Deploy Firebase Functions Development
     if: github.event_name == 'push' && github.ref == 'refs/heads/development'
     needs:
-      - app-ci
       - functions-ci
     runs-on: ubuntu-latest
     environment: Development
@@ -191,7 +188,6 @@ jobs:
     name: Deploy Firebase Functions Production
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
-      - app-ci
       - functions-ci
     runs-on: ubuntu-latest
     environment: Production
