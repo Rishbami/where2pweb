@@ -115,7 +115,7 @@ export function SearchShell() {
             </Link>
           </div>
 
-          <MapPreview toilets={toilets} />
+          <MapPreview toilets={toilets} userLocation={userLocation} />
 
           <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-4">
