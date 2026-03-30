@@ -1,4 +1,5 @@
-import { firestoreCollections, getFirestoreToiletSeed } from "@/lib/toilets";
+import { toiletSeedData } from "@/lib/toilet-seed";
+import { firestoreCollections } from "@/lib/toilets";
 
 export const firestoreStructure = {
   toilets: {
@@ -43,4 +44,7 @@ export const firestoreStructure = {
   },
 } as const;
 
-export const firestoreSeedPreview = getFirestoreToiletSeed();
+export const firestoreSeedPreview = toiletSeedData.map((toilet) => ({
+  ...toilet,
+  searchKeywords: toilet.name.toLowerCase().split(" "),
+}));
