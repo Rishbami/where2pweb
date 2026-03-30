@@ -1,7 +1,8 @@
- "use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { AddToiletFab } from "@/components/add-toilet-fab";
 import type { ToiletSearchResult } from "@/lib/filter-toilets";
 import { formatDistance } from "@/lib/location";
 import {
@@ -146,9 +147,7 @@ export function MapPreview({
           </div>
         ) : null}
 
-        <div className="absolute bottom-4 left-4 rounded-full bg-white/95 px-4 py-2 text-sm text-slate-600 shadow-sm">
-          Blue dot is your search centre
-        </div>
+        <AddToiletFab />
       </div>
 
       <div className="border-t border-slate-200 p-4">
