@@ -26,6 +26,8 @@ a {
 }
 
 button[class*="bg-slate-950"],
-a[class*="bg-slate-950"] {
-  color: #ffffff;
+button[class*="bg-slate-950"] *,
+a[class*="bg-slate-950"],
+a[class*="bg-slate-950"] * {
+  color: #ffffff !important;
 }
