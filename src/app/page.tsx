@@ -4,7 +4,7 @@ import { FirebaseStatus } from "@/components/firebase-status";
 export default function HomePage() {
   return (
     <main className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
-      <section className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-6xl flex-col justify-between overflow-hidden rounded-[2.5rem] border border-white/70 bg-white/80 p-6 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:p-10">
+      <section className="mx-auto flex min-h-[calc(100vh-6.5rem)] w-full max-w-6xl flex-col justify-between overflow-hidden rounded-[2.5rem] border border-white/70 bg-white/80 p-6 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:p-10">
         <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.34em] text-slate-500">
@@ -43,6 +43,9 @@ export default function HomePage() {
               <span className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2">
                 Google Maps directions
               </span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2">
+                Optional accounts
+              </span>
             </div>
           </div>
 
@@ -59,17 +62,36 @@ export default function HomePage() {
               </div>
               <div className="rounded-[1.5rem] bg-slate-950 p-4 text-white shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                  Main filters
+                  Optional login
                 </p>
-                <p className="mt-3 text-lg font-semibold">Clean, accessible, fast</p>
+                <p className="mt-3 text-lg font-semibold">
+                  Browse first. Sign in when you want to contribute.
+                </p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Keep the flow simple, immediate, and easy to demo.
+                  Accounts unlock reviews and adding toilets later without
+                  blocking the core search flow.
                 </p>
               </div>
             </div>
 
             <div className="mt-4 rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
               <FirebaseStatus />
+            </div>
+
+            <div className="mt-4 rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-sm font-semibold text-slate-900">
+                Want to leave reviews later?
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                We keep the browsing experience open, and layer accounts on top
+                when users want to contribute.
+              </p>
+              <Link
+                href="/auth"
+                className="mt-4 inline-flex rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300"
+              >
+                Open auth screen
+              </Link>
             </div>
           </div>
         </div>

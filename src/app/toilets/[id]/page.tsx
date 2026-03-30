@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ContributionPanel } from "@/components/contribution-panel";
 import { RatingStars } from "@/components/rating-stars";
 import { Tag } from "@/components/tag";
 import { getToiletById } from "@/lib/toilets";
@@ -72,6 +73,8 @@ export default async function ToiletDetailPage({
             >
               Navigate with Google Maps
             </a>
+
+            <ContributionPanel />
 
             <div className="rounded-[1.75rem] border border-dashed border-slate-200 bg-slate-50 p-6">
               <p className="text-sm font-semibold text-slate-900">Photos</p>
