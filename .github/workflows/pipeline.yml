@@ -1,6 +1,7 @@
 name: Pipeline
 
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - development
@@ -83,7 +84,7 @@ jobs:
 
   deploy-vercel-development:
     name: Deploy Vercel Preview
-    if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/development'
     needs:
       - app-ci
     runs-on: ubuntu-latest
@@ -116,7 +117,7 @@ jobs:
 
   deploy-vercel-production:
     name: Deploy Vercel Production
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     needs:
       - app-ci
     runs-on: ubuntu-latest
@@ -149,7 +150,7 @@ jobs:
 
   deploy-functions-development:
     name: Deploy Firebase Functions Development
-    if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/development'
     needs:
       - functions-ci
     runs-on: ubuntu-latest
@@ -186,7 +187,7 @@ jobs:
 
   deploy-functions-production:
     name: Deploy Firebase Functions Production
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     needs:
       - functions-ci
     runs-on: ubuntu-latest
