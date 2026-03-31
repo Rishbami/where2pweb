@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 
 const navItems = [
-  { href: "/", label: "Home" },
   { href: "/search", label: "Search" },
   { href: "/auth", label: "Account" },
 ] as const;
@@ -18,7 +17,10 @@ export function TopNav() {
     <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/85 backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <div>
-          <Link href="/" className="text-lg font-semibold tracking-[-0.03em] text-slate-950">
+          <Link
+            href="/search"
+            className="text-lg font-semibold tracking-[-0.03em] text-slate-950"
+          >
             where2p
           </Link>
           <p className="text-xs uppercase tracking-[0.22em] text-slate-400">
@@ -28,8 +30,7 @@ export function TopNav() {
 
         <nav className="hidden items-center gap-2 md:flex">
           {navItems.map((item) => {
-            const isActive =
-              item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            const isActive = pathname.startsWith(item.href);
 
             return (
               <Link

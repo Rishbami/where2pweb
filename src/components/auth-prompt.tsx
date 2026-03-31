@@ -15,12 +15,7 @@ export function AuthPrompt() {
   }
 
   if (user) {
-    return (
-      <div className="rounded-[1.75rem] border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900 shadow-sm">
-        Signed in as <strong>{user.email}</strong>. Review submission and add-toilet
-        actions can be wired on top of this session next.
-      </div>
-    );
+    return null;
   }
 
   return (

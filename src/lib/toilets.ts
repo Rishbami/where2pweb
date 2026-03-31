@@ -19,6 +19,18 @@ export type ToiletRecord = {
   photosCount: number;
 };
 
+export type CreateToiletInput = {
+  name: string;
+  description: string;
+  address: string;
+  openingHours: string;
+  location: {
+    lat: number;
+    lng: number;
+  };
+  accessibility: AccessibilityFeature[];
+};
+
 export type ToiletFilters = {
   minimumRating: number;
   wheelchair: boolean;
