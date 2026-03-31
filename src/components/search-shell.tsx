@@ -129,10 +129,8 @@ export function SearchShell() {
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-        <FilterPanel filters={filters} onChange={setFilters} />
-
-        <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <div className="order-1 space-y-6 lg:order-2">
           <AuthPrompt />
 
           <MapPreview toilets={toilets} userLocation={userLocation} />
@@ -174,6 +172,10 @@ export function SearchShell() {
               ) : null}
             </div>
           </section>
+        </div>
+
+        <div className="order-2 lg:order-1">
+          <FilterPanel filters={filters} onChange={setFilters} />
         </div>
       </div>
     </div>
