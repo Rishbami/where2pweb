@@ -108,6 +108,7 @@ export function ReviewPage({ id }: { id: string }) {
       await createOrUpdateReview(
         toilet.id,
         {
+          toiletName: toilet.name,
           rating,
           text: reviewText,
           photoUrls,

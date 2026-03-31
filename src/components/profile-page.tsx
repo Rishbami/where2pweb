@@ -1,29 +1,108 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { AuthCard } from "@/components/auth-card";
 import { useAuth } from "@/components/auth-provider";
+import {
+  fetchProfileStats,
+  fetchRecentProfileActivity,
+} from "@/lib/firebase/firestore";
 
-const recentActivity = [
-  {
-    title: "Reviewed Piccadilly Gardens",
-    meta: "Clean and easy to find near the tram stop",
-    when: "2 days ago",
-  },
-  {
-    title: "Added Central Library photos",
-    meta: "Helpful angle for the main entrance toilets",
-    when: "1 week ago",
-  },
-  {
-    title: "Added new toilet at Arndale",
-    meta: "Family-friendly location with baby-changing",
-    when: "2 weeks ago",
-  },
-];
+function formatRelativeDate(value: Date | null) {
+  if (!value) {
+    return "Recently";
+  }
+
+  const diffMs = Date.now() - value.getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const dayDiff = Math.max(0, Math.floor(diffMs / dayMs));
+
+  if (dayDiff === 0) {
+    return "Today";
+  }
+
+  if (dayDiff === 1) {
+    return "1 day ago";
+  }
+
+  if (dayDiff < 7) {
+    return `${dayDiff} days ago`;
+  }
+
+  const weekDiff = Math.floor(dayDiff / 7);
+  if (weekDiff === 1) {
+    return "1 week ago";
+  }
+
+  if (weekDiff < 5) {
+    return `${weekDiff} weeks ago`;
+  }
+
+  return value.toLocaleDateString();
+}
 
 export function ProfilePage() {
   const { user, isLoading } = useAuth();
+  const [stats, setStats] = useState({
+    reviewCount: 0,
+    photoCount: 0,
+    toiletsAddedCount: 0,
+  });
+  const [statsState, setStatsState] = useState<"idle" | "loading" | "ready" | "error">(
+    "idle",
+  );
+  const [activity, setActivity] = useState<
+    Array<{
+      id: string;
+      type: "review" | "toilet";
+      title: string;
+      meta: string;
+      occurredAt: Date | null;
+    }>
+  >([]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadStats() {
+      if (!user) {
+        setStats({
+          reviewCount: 0,
+          photoCount: 0,
+          toiletsAddedCount: 0,
+        });
+        setActivity([]);
+        setStatsState("idle");
+        return;
+      }
+
+      try {
+        setStatsState("loading");
+        const [nextStats, nextActivity] = await Promise.all([
+          fetchProfileStats(user.uid),
+          fetchRecentProfileActivity(user.uid),
+        ]);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setStats(nextStats);
+        setActivity(nextActivity);
+        setStatsState("ready");
+      } catch {
+        if (!isCancelled) {
+          setStatsState("error");
+        }
+      }
+    }
+
+    void loadStats();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -92,15 +171,17 @@ export function ProfilePage() {
 
         <div className="grid border-b border-slate-200 sm:grid-cols-3">
           <div className="px-6 py-6 text-center sm:px-8">
-            <p className="text-3xl font-semibold text-slate-950">23</p>
+            <p className="text-3xl font-semibold text-slate-950">{stats.reviewCount}</p>
             <p className="mt-1 text-sm text-slate-500">Reviews</p>
           </div>
           <div className="border-t border-slate-200 px-6 py-6 text-center sm:border-l sm:border-t-0 sm:px-8">
-            <p className="text-3xl font-semibold text-slate-950">7</p>
+            <p className="text-3xl font-semibold text-slate-950">{stats.photoCount}</p>
             <p className="mt-1 text-sm text-slate-500">Photos</p>
           </div>
           <div className="border-t border-slate-200 px-6 py-6 text-center sm:border-l sm:border-t-0 sm:px-8">
-            <p className="text-3xl font-semibold text-slate-950">2</p>
+            <p className="text-3xl font-semibold text-slate-950">
+              {stats.toiletsAddedCount}
+            </p>
             <p className="mt-1 text-sm text-slate-500">Toilets added</p>
           </div>
         </div>
@@ -109,36 +190,47 @@ export function ProfilePage() {
           <div>
             <h2 className="text-xl font-semibold text-slate-950">Recent activity</h2>
             <div className="mt-5 space-y-4">
-              {recentActivity.map((item) => (
-                <div
-                  key={`${item.title}-${item.when}`}
-                  className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4"
-                >
-                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{item.meta}</p>
-                  <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
-                    {item.when}
-                  </p>
+              {statsState === "loading" ? (
+                <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                  Loading live account stats...
                 </div>
-              ))}
+              ) : null}
+
+              {statsState === "error" ? (
+                <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  We couldn&apos;t load your live stats just now.
+                </div>
+              ) : null}
+
+              {statsState !== "loading" && statsState !== "error" ? (
+                activity.length > 0 ? (
+                  activity.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4"
+                    >
+                      <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">{item.meta}</p>
+                      <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
+                        {formatRelativeDate(item.occurredAt)}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      No recent activity yet
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      Leave a review or add a toilet and it will appear here.
+                    </p>
+                  </div>
+                )
+              ) : null}
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
-              <p className="text-sm font-semibold text-slate-900">Account actions</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                We will surface add-toilet and review submission shortcuts here
-                on the next steps of this branch.
-              </p>
-              <Link
-                href="/search"
-                className="mt-4 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                Back to search
-              </Link>
-            </div>
-
+          <div>
             <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
               <p className="text-sm font-semibold text-slate-900">Account details</p>
               <dl className="mt-4 space-y-3 text-sm text-slate-500">

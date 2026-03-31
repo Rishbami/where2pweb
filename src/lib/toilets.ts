@@ -17,6 +17,8 @@ export type ToiletRecord = {
   accessibility: AccessibilityFeature[];
   openingHours: string;
   photosCount: number;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
 };
 
 export type CreateToiletInput = {
@@ -34,6 +36,7 @@ export type CreateToiletInput = {
 export type ReviewRecord = {
   id: string;
   toiletId: string;
+  toiletName: string | null;
   userId: string;
   userEmail: string | null;
   rating: number;
@@ -45,6 +48,7 @@ export type ReviewRecord = {
 };
 
 export type CreateReviewInput = {
+  toiletName: string;
   rating: number;
   text: string;
   photoUrls: string[];
