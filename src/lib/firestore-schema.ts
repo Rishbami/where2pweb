@@ -30,9 +30,13 @@ export const firestoreStructure = {
     documentShape: {
       toiletId: "string",
       userId: "string",
+      userEmail: "string | null",
       rating: "number",
       text: "string",
+      photoUrls: ["string"],
+      photoCount: "number",
       createdAt: "Timestamp",
+      updatedAt: "Timestamp",
     },
   },
   users: {
