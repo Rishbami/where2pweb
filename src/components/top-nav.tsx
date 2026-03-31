@@ -28,7 +28,7 @@ export function TopNav() {
           </p>
         </div>
 
-        <nav className="hidden items-center gap-2 md:flex">
+        <nav className="flex items-center gap-2">
           {navItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
 
