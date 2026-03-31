@@ -14,6 +14,7 @@ import {
   logout,
   registerWithEmail,
   subscribeToAuth,
+  waitForInitialAuthState,
 } from "@/lib/firebase/auth";
 import type { User } from "firebase/auth";
 
@@ -30,21 +31,50 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const isConfigured = hasRequiredFirebaseEnv();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(isConfigured);
+  const [authState, setAuthState] = useState<User | null | undefined>(
+    isConfigured ? undefined : null,
+  );
 
   useEffect(() => {
     if (!isConfigured) {
       return;
     }
 
+    let isCancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (!isCancelled) {
+        // If Firebase auth bootstrap stalls, fail open to the signed-out state.
+        setAuthState(null);
+      }
+    }, 4000);
+
+    void waitForInitialAuthState()
+      .then(() => {
+        if (!isCancelled) {
+          window.clearTimeout(timeoutId);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          window.clearTimeout(timeoutId);
+          setAuthState(null);
+        }
+      });
+
     const unsubscribe = subscribeToAuth((nextUser) => {
-      setUser(nextUser);
-      setIsLoading(false);
+      window.clearTimeout(timeoutId);
+      setAuthState(nextUser);
     });
 
-    return unsubscribe;
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+      unsubscribe();
+    };
   }, [isConfigured]);
+
+  const user = isConfigured ? (authState ?? null) : null;
+  const isLoading = isConfigured && authState === undefined;
 
   const value = useMemo<AuthContextValue>(
     () => ({

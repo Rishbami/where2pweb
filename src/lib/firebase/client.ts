@@ -20,6 +20,10 @@ const requiredFirebaseEnvKeys = Object.entries({
 }) as Array<[string, string | undefined]>;
 
 export function hasRequiredFirebaseEnv() {
+  if (process.env.NEXT_PUBLIC_E2E_DISABLE_FIREBASE === "1") {
+    return false;
+  }
+
   return requiredFirebaseEnvKeys.every(([, value]) => Boolean(value));
 }
 

@@ -42,7 +42,7 @@ function formatRelativeDate(value: Date | null) {
 }
 
 export function ProfilePage() {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     reviewCount: 0,
     photoCount: 0,
@@ -103,16 +103,6 @@ export function ProfilePage() {
       isCancelled = true;
     };
   }, [user]);
-
-  if (isLoading) {
-    return (
-      <main className="mx-auto flex min-h-[calc(100vh-5.5rem)] w-full max-w-6xl items-center px-4 py-6 sm:px-6 lg:px-8">
-        <section className="w-full rounded-[2.5rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <p className="text-sm text-slate-500">Loading account...</p>
-        </section>
-      </main>
-    );
-  }
 
   if (!user) {
     return (
