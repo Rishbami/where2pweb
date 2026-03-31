@@ -30,8 +30,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const isConfigured = hasRequiredFirebaseEnv();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(isConfigured);
+  const [authState, setAuthState] = useState<User | null | undefined>(
+    isConfigured ? undefined : null,
+  );
 
   useEffect(() => {
     if (!isConfigured) {
@@ -39,12 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const unsubscribe = subscribeToAuth((nextUser) => {
-      setUser(nextUser);
-      setIsLoading(false);
+      setAuthState(nextUser);
     });
 
     return unsubscribe;
   }, [isConfigured]);
+
+  const user = isConfigured ? (authState ?? null) : null;
+  const isLoading = isConfigured && authState === undefined;
 
   const value = useMemo<AuthContextValue>(
     () => ({

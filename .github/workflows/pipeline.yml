@@ -44,7 +44,9 @@ jobs:
 
       - name: Run app tests
         if: steps.app-test-script.outputs.exists == 'true'
-        run: npm test
+        run: |
+          npx playwright install --with-deps chromium
+          npm test
 
       - name: Build app
         run: npm run build
