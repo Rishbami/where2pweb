@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AuthCard } from "@/components/auth-card";
 import { useAuth } from "@/components/auth-provider";
@@ -231,21 +230,7 @@ export function ProfilePage() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
-              <p className="text-sm font-semibold text-slate-900">Account actions</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                We will surface add-toilet and review submission shortcuts here
-                on the next steps of this branch.
-              </p>
-              <Link
-                href="/search"
-                className="mt-4 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                Back to search
-              </Link>
-            </div>
-
+          <div>
             <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
               <p className="text-sm font-semibold text-slate-900">Account details</p>
               <dl className="mt-4 space-y-3 text-sm text-slate-500">
