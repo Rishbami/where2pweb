@@ -31,6 +31,25 @@ export type CreateToiletInput = {
   accessibility: AccessibilityFeature[];
 };
 
+export type ReviewRecord = {
+  id: string;
+  toiletId: string;
+  userId: string;
+  userEmail: string | null;
+  rating: number;
+  text: string;
+  photoUrls: string[];
+  photoCount: number;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+};
+
+export type CreateReviewInput = {
+  rating: number;
+  text: string;
+  photoUrls: string[];
+};
+
 export type ToiletFilters = {
   minimumRating: number;
   wheelchair: boolean;

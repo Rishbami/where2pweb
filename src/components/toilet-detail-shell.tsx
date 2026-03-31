@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ContributionPanel } from "@/components/contribution-panel";
 import { RatingStars } from "@/components/rating-stars";
 import { Tag } from "@/components/tag";
-import { fetchToiletById } from "@/lib/firebase/firestore";
-import type { ToiletRecord } from "@/lib/toilets";
+import { fetchReviewsByToiletId, fetchToiletById } from "@/lib/firebase/firestore";
+import type { ReviewRecord, ToiletRecord } from "@/lib/toilets";
 
 export function ToiletDetailShell({ id }: { id: string }) {
   const [toilet, setToilet] = useState<ToiletRecord | null>(null);
+  const [reviews, setReviews] = useState<ReviewRecord[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "not-found" | "error">(
     "loading",
   );
@@ -19,7 +19,10 @@ export function ToiletDetailShell({ id }: { id: string }) {
 
     async function loadToilet() {
       try {
-        const nextToilet = await fetchToiletById(id);
+        const [nextToilet, nextReviews] = await Promise.all([
+          fetchToiletById(id),
+          fetchReviewsByToiletId(id),
+        ]);
 
         if (isCancelled) {
           return;
@@ -31,6 +34,7 @@ export function ToiletDetailShell({ id }: { id: string }) {
         }
 
         setToilet(nextToilet);
+        setReviews(nextReviews);
         setStatus("ready");
       } catch {
         if (!isCancelled) {
@@ -100,10 +104,10 @@ export function ToiletDetailShell({ id }: { id: string }) {
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <RatingStars rating={toilet.rating} />
               <span className="text-sm font-medium text-slate-700">
-                {toilet.rating.toFixed(1)}
+                {toilet.reviewCount === 0 ? "Not yet rated" : toilet.rating.toFixed(1)}
               </span>
               <span className="text-sm text-slate-500">
-                {toilet.reviewCount} placeholder reviews
+                {toilet.reviewCount} review{toilet.reviewCount === 1 ? "" : "s"}
               </span>
             </div>
 
@@ -120,6 +124,73 @@ export function ToiletDetailShell({ id }: { id: string }) {
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 {toilet.openingHours}
               </p>
+              <Link
+                href={`/toilets/${toilet.id}/review`}
+                className="mt-5 inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Leave a review
+              </Link>
+            </div>
+
+            <div className="mt-6 rounded-[1.75rem] border border-slate-200 bg-white p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Recent reviews</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {reviews.length} review{reviews.length === 1 ? "" : "s"} for this toilet
+                  </p>
+                </div>
+              </div>
+
+              {reviews.length > 0 ? (
+                <div className="mt-5 space-y-4">
+                  {reviews.map((review) => (
+                    <article
+                      key={review.id}
+                      className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4"
+                    >
+                      <div className="flex flex-wrap items-center gap-3">
+                        <p className="text-sm font-semibold text-slate-900">
+                          {review.userEmail ?? "Community member"}
+                        </p>
+                        <RatingStars rating={review.rating} />
+                        <span className="text-sm text-slate-500">
+                          {review.rating.toFixed(1)}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-slate-600">{review.text}</p>
+
+                      {review.photoUrls.length > 0 ? (
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          {review.photoUrls.map((photoUrl) => (
+                            <div
+                              key={photoUrl}
+                              className="overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={photoUrl}
+                                alt={`Review photo for ${toilet.name}`}
+                                className="h-40 w-full object-cover"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
+                        {review.updatedAt
+                          ? review.updatedAt.toLocaleDateString()
+                          : "Recently added"}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-5 rounded-[1.5rem] border border-dashed border-slate-200 px-5 py-8 text-sm text-slate-500">
+                  No reviews yet. Be the first to leave one.
+                </div>
+              )}
             </div>
           </div>
 
@@ -132,41 +203,6 @@ export function ToiletDetailShell({ id }: { id: string }) {
             >
               Navigate with Google Maps
             </a>
-
-            <ContributionPanel />
-
-            <div className="rounded-[1.75rem] border border-dashed border-slate-200 bg-slate-50 p-6">
-              <p className="text-sm font-semibold text-slate-900">Photos</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Placeholder for {toilet.photosCount} user photos and future upload
-                support.
-              </p>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-dashed border-slate-200 bg-slate-50 p-6">
-              <p className="text-sm font-semibold text-slate-900">Reviews</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Placeholder for review snippets. Submission flow comes later once
-                auth and moderation are in.
-              </p>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-              <p className="text-sm font-semibold text-slate-900">
-                Firestore-ready collections
-              </p>
-              <ul className="mt-3 space-y-2 text-sm text-slate-500">
-                <li>
-                  <code>toilets/{"{toiletId}"}</code> for location and metadata
-                </li>
-                <li>
-                  <code>reviews/{"{reviewId}"}</code> for community feedback
-                </li>
-                <li>
-                  <code>users/{"{userId}"}</code> reserved for profile data later
-                </li>
-              </ul>
-            </div>
           </div>
         </div>
       </section>
