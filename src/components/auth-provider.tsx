@@ -14,6 +14,7 @@ import {
   logout,
   registerWithEmail,
   subscribeToAuth,
+  waitForInitialAuthState,
 } from "@/lib/firebase/auth";
 import type { User } from "firebase/auth";
 
@@ -39,11 +40,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    let isCancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (!isCancelled) {
+        // If Firebase auth bootstrap stalls, fail open to the signed-out state.
+        setAuthState(null);
+      }
+    }, 4000);
+
+    void waitForInitialAuthState()
+      .then(() => {
+        if (!isCancelled) {
+          window.clearTimeout(timeoutId);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          window.clearTimeout(timeoutId);
+          setAuthState(null);
+        }
+      });
+
     const unsubscribe = subscribeToAuth((nextUser) => {
+      window.clearTimeout(timeoutId);
       setAuthState(nextUser);
     });
 
-    return unsubscribe;
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+      unsubscribe();
+    };
   }, [isConfigured]);
 
   const user = isConfigured ? (authState ?? null) : null;

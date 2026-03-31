@@ -11,7 +11,10 @@ test.describe("authenticated flows", () => {
 
     await page.getByLabel("Email").fill(testEmail ?? "");
     await page.getByLabel("Password").fill(testPassword ?? "");
-    await page.getByRole("button", { name: "Login" }).click();
+    await page.locator("form").getByRole("button", { name: "Login" }).click();
+    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible({
+      timeout: 15000,
+    });
 
     await page.goto("/toilets/new");
 

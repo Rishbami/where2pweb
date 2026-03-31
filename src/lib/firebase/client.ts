@@ -20,10 +20,6 @@ const requiredFirebaseEnvKeys = Object.entries({
 }) as Array<[string, string | undefined]>;
 
 export function hasRequiredFirebaseEnv() {
-  if (typeof navigator !== "undefined" && navigator.webdriver) {
-    return false;
-  }
-
   if (process.env.NEXT_PUBLIC_E2E_DISABLE_FIREBASE === "1") {
     return false;
   }

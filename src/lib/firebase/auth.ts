@@ -14,6 +14,10 @@ export function getFirebaseAuth() {
   return getAuth(getFirebaseApp());
 }
 
+export async function waitForInitialAuthState() {
+  await getFirebaseAuth().authStateReady();
+}
+
 export function subscribeToAuth(callback: (user: User | null) => void) {
   return onAuthStateChanged(getFirebaseAuth(), callback);
 }
