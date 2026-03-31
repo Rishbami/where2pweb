@@ -29,6 +29,7 @@ export const firestoreStructure = {
     collection: firestoreCollections.reviews,
     documentShape: {
       toiletId: "string",
+      toiletName: "string",
       userId: "string",
       userEmail: "string | null",
       rating: "number",

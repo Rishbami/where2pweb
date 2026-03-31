@@ -4,7 +4,43 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AuthCard } from "@/components/auth-card";
 import { useAuth } from "@/components/auth-provider";
-import { fetchProfileStats } from "@/lib/firebase/firestore";
+import {
+  fetchProfileStats,
+  fetchRecentProfileActivity,
+} from "@/lib/firebase/firestore";
+
+function formatRelativeDate(value: Date | null) {
+  if (!value) {
+    return "Recently";
+  }
+
+  const diffMs = Date.now() - value.getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const dayDiff = Math.max(0, Math.floor(diffMs / dayMs));
+
+  if (dayDiff === 0) {
+    return "Today";
+  }
+
+  if (dayDiff === 1) {
+    return "1 day ago";
+  }
+
+  if (dayDiff < 7) {
+    return `${dayDiff} days ago`;
+  }
+
+  const weekDiff = Math.floor(dayDiff / 7);
+  if (weekDiff === 1) {
+    return "1 week ago";
+  }
+
+  if (weekDiff < 5) {
+    return `${weekDiff} weeks ago`;
+  }
+
+  return value.toLocaleDateString();
+}
 
 export function ProfilePage() {
   const { user, isLoading } = useAuth();
@@ -16,6 +52,15 @@ export function ProfilePage() {
   const [statsState, setStatsState] = useState<"idle" | "loading" | "ready" | "error">(
     "idle",
   );
+  const [activity, setActivity] = useState<
+    Array<{
+      id: string;
+      type: "review" | "toilet";
+      title: string;
+      meta: string;
+      occurredAt: Date | null;
+    }>
+  >([]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -27,19 +72,24 @@ export function ProfilePage() {
           photoCount: 0,
           toiletsAddedCount: 0,
         });
+        setActivity([]);
         setStatsState("idle");
         return;
       }
 
       try {
         setStatsState("loading");
-        const nextStats = await fetchProfileStats(user.uid);
+        const [nextStats, nextActivity] = await Promise.all([
+          fetchProfileStats(user.uid),
+          fetchRecentProfileActivity(user.uid),
+        ]);
 
         if (isCancelled) {
           return;
         }
 
         setStats(nextStats);
+        setActivity(nextActivity);
         setStatsState("ready");
       } catch {
         if (!isCancelled) {
@@ -154,34 +204,29 @@ export function ProfilePage() {
               ) : null}
 
               {statsState !== "loading" && statsState !== "error" ? (
-                <>
+                activity.length > 0 ? (
+                  activity.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4"
+                    >
+                      <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">{item.meta}</p>
+                      <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
+                        {formatRelativeDate(item.occurredAt)}
+                      </p>
+                    </div>
+                  ))
+                ) : (
                   <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
                     <p className="text-sm font-semibold text-slate-900">
-                      {stats.reviewCount} review{stats.reviewCount === 1 ? "" : "s"} written
+                      No recent activity yet
                     </p>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
-                      Your account stats are now coming from live Firebase review data.
+                      Leave a review or add a toilet and it will appear here.
                     </p>
                   </div>
-                  <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-sm font-semibold text-slate-900">
-                      {stats.photoCount} photo{stats.photoCount === 1 ? "" : "s"} uploaded
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
-                      Photo count is calculated from the review photos linked to your account.
-                    </p>
-                  </div>
-                  <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-sm font-semibold text-slate-900">
-                      {stats.toiletsAddedCount} toilet
-                      {stats.toiletsAddedCount === 1 ? "" : "s"} added
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
-                      Toilet ownership is pulled from the listings created with your Firebase
-                      account.
-                    </p>
-                  </div>
-                </>
+                )
               ) : null}
             </div>
           </div>

@@ -54,6 +54,7 @@ service cloud.firestore {
     function isValidReviewWrite() {
       return request.resource.data.keys().hasOnly([
           "toiletId",
+          "toiletName",
           "userId",
           "userEmail",
           "rating",
@@ -64,6 +65,8 @@ service cloud.firestore {
           "updatedAt",
         ])
         && request.resource.data.toiletId is string
+        && request.resource.data.toiletName is string
+        && request.resource.data.toiletName.size() >= 3
         && request.resource.data.userId == request.auth.uid
         && (
           request.resource.data.userEmail == null

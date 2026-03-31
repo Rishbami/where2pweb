@@ -79,6 +79,8 @@ export function mapFirestoreToilet(
     accessibility: data.accessibility,
     openingHours: data.openingHours,
     photosCount: data.photosCount,
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
     location: {
       lat: location.lat,
       lng: location.lng,
@@ -124,6 +126,7 @@ export function mapFirestoreReview(id: string, data: DocumentData): ReviewRecord
   return {
     id,
     toiletId: data.toiletId,
+    toiletName: typeof data.toiletName === "string" ? data.toiletName : null,
     userId: data.userId,
     userEmail: data.userEmail ?? null,
     rating: data.rating,
@@ -190,6 +193,53 @@ export async function fetchProfileStats(userId: string) {
   };
 }
 
+export async function fetchRecentProfileActivity(userId: string) {
+  const [reviews, toilets] = await Promise.all([
+    fetchReviewsByUserId(userId),
+    fetchToiletsByCreatorId(userId),
+  ]);
+
+  const missingNameIds = Array.from(
+    new Set(
+      reviews
+        .filter((review) => !review.toiletName)
+        .map((review) => review.toiletId),
+    ),
+  );
+  const toiletNameMap = new Map<string, string>();
+
+  if (missingNameIds.length > 0) {
+    const relatedToilets = await Promise.all(
+      missingNameIds.map(async (toiletId) => fetchToiletById(toiletId)),
+    );
+
+    relatedToilets.forEach((toilet) => {
+      if (toilet) {
+        toiletNameMap.set(toilet.id, toilet.name);
+      }
+    });
+  }
+
+  return [
+    ...reviews.map((review) => ({
+      id: `review-${review.id}`,
+      type: "review" as const,
+      title: `Reviewed ${review.toiletName || toiletNameMap.get(review.toiletId) || review.toiletId.replace(/-/g, " ")}`,
+      meta: review.text,
+      occurredAt: review.updatedAt ?? review.createdAt,
+    })),
+    ...toilets.map((toilet) => ({
+      id: `toilet-${toilet.id}`,
+      type: "toilet" as const,
+      title: `Added ${toilet.name}`,
+      meta: toilet.address,
+      occurredAt: toilet.createdAt ?? toilet.updatedAt ?? null,
+    })),
+  ]
+    .sort((a, b) => (b.occurredAt?.getTime() ?? 0) - (a.occurredAt?.getTime() ?? 0))
+    .slice(0, 6);
+}
+
 function buildSearchKeywords(input: CreateToiletInput) {
   return [
     input.name,
@@ -244,6 +294,7 @@ export async function createOrUpdateReview(
 
   const basePayload = {
     toiletId,
+    toiletName: input.toiletName.trim(),
     userId: user.uid,
     userEmail: user.email,
     rating: input.rating,
