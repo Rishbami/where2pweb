@@ -2,6 +2,120 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAccessibilityList(value) {
+      return value is list
+        && value.size() <= 3
+        && value.hasOnly(["wheelchair", "baby-changing", "gender-neutral"]);
+    }
+
+    function isValidToiletCreate() {
+      return request.resource.data.keys().hasOnly([
+          "name",
+          "description",
+          "address",
+          "location",
+          "rating",
+          "reviewCount",
+          "accessibility",
+          "openingHours",
+          "photosCount",
+          "searchKeywords",
+          "createdByUserId",
+          "createdByEmail",
+          "createdAt",
+          "updatedAt",
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 3
+        && request.resource.data.description is string
+        && request.resource.data.description.size() >= 10
+        && request.resource.data.address is string
+        && request.resource.data.address.size() >= 5
+        && request.resource.data.openingHours is string
+        && request.resource.data.openingHours.size() >= 3
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 0
+        && request.resource.data.rating <= 5
+        && request.resource.data.reviewCount == 0
+        && request.resource.data.photosCount == 0
+        && request.resource.data.accessibility is list
+        && isAccessibilityList(request.resource.data.accessibility)
+        && request.resource.data.searchKeywords is list
+        && request.resource.data.location is map
+        && request.resource.data.location.lat is number
+        && request.resource.data.location.lng is number
+        && request.resource.data.createdByUserId == request.auth.uid
+        && (
+          request.resource.data.createdByEmail == null
+          || request.resource.data.createdByEmail == request.auth.token.email
+        );
+    }
+
+    function isValidReviewWrite() {
+      return request.resource.data.keys().hasOnly([
+          "toiletId",
+          "toiletName",
+          "userId",
+          "userEmail",
+          "rating",
+          "text",
+          "photoUrls",
+          "photoCount",
+          "createdAt",
+          "updatedAt",
+        ])
+        && request.resource.data.toiletId is string
+        && request.resource.data.toiletName is string
+        && request.resource.data.toiletName.size() >= 3
+        && request.resource.data.userId == request.auth.uid
+        && (
+          request.resource.data.userEmail == null
+          || request.resource.data.userEmail == request.auth.token.email
+        )
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 10
+        && request.resource.data.photoUrls is list
+        && request.resource.data.photoUrls.size() == request.resource.data.photoCount
+        && request.resource.data.photoCount is number
+        && request.resource.data.photoCount >= 0;
+    }
+
+    function isValidToiletAggregateUpdate() {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          "rating",
+          "reviewCount",
+          "photosCount",
+          "updatedAt",
+        ])
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 0
+        && request.resource.data.rating <= 5
+        && request.resource.data.reviewCount is number
+        && request.resource.data.reviewCount >= 0
+        && request.resource.data.photosCount is number
+        && request.resource.data.photosCount >= 0;
+    }
+
+    match /toilets/{toiletId} {
+      allow read: if true;
+      allow create: if request.auth != null && isValidToiletCreate();
+      allow update: if request.auth != null && isValidToiletAggregateUpdate();
+      allow delete: if false;
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create, update: if request.auth != null && isValidReviewWrite();
+      allow delete: if false;
+    }
+
+    match /users/{userId} {
+      allow read, write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

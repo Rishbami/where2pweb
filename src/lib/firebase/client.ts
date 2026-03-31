@@ -7,13 +7,23 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-const requiredFirebaseEnvKeys = Object.entries(firebaseConfig) as Array<
-  [keyof typeof firebaseConfig, string | undefined]
->;
+const requiredFirebaseEnvKeys = Object.entries({
+  apiKey: firebaseConfig.apiKey,
+  authDomain: firebaseConfig.authDomain,
+  projectId: firebaseConfig.projectId,
+  storageBucket: firebaseConfig.storageBucket,
+  messagingSenderId: firebaseConfig.messagingSenderId,
+  appId: firebaseConfig.appId,
+}) as Array<[string, string | undefined]>;
 
 export function hasRequiredFirebaseEnv() {
+  if (process.env.NEXT_PUBLIC_E2E_DISABLE_FIREBASE === "1") {
+    return false;
+  }
+
   return requiredFirebaseEnvKeys.every(([, value]) => Boolean(value));
 }
 
