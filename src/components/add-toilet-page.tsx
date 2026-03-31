@@ -13,6 +13,52 @@ type PinLocation = {
   lng: number;
 };
 
+const daysOfWeek = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+] as const;
+
+type DayName = (typeof daysOfWeek)[number];
+
+type DaySchedule = {
+  enabled: boolean;
+  opensAt: string;
+  closesAt: string;
+};
+
+function createDefaultSchedule(): Record<DayName, DaySchedule> {
+  return {
+    Monday: { enabled: false, opensAt: "07:00", closesAt: "22:00" },
+    Tuesday: { enabled: false, opensAt: "07:00", closesAt: "22:00" },
+    Wednesday: { enabled: false, opensAt: "07:00", closesAt: "22:00" },
+    Thursday: { enabled: false, opensAt: "07:00", closesAt: "22:00" },
+    Friday: { enabled: false, opensAt: "07:00", closesAt: "22:00" },
+    Saturday: { enabled: false, opensAt: "07:00", closesAt: "22:00" },
+    Sunday: { enabled: false, opensAt: "07:00", closesAt: "22:00" },
+  };
+}
+
+function formatTimeLabel(value: string) {
+  const [hours, minutes] = value.split(":");
+
+  if (!hours || !minutes) {
+    return value;
+  }
+
+  const hourNumber = Number(hours);
+  const suffix = hourNumber >= 12 ? "pm" : "am";
+  const normalizedHour = hourNumber % 12 || 12;
+
+  return minutes === "00"
+    ? `${normalizedHour}${suffix}`
+    : `${normalizedHour}:${minutes}${suffix}`;
+}
+
 export function AddToiletPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
@@ -21,7 +67,10 @@ export function AddToiletPage() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
-  const [openingHours, setOpeningHours] = useState("");
+  const [openAllDay, setOpenAllDay] = useState(false);
+  const [schedule, setSchedule] = useState<Record<DayName, DaySchedule>>(
+    createDefaultSchedule(),
+  );
   const [wheelchair, setWheelchair] = useState(false);
   const [babyChanging, setBabyChanging] = useState(false);
   const [genderNeutral, setGenderNeutral] = useState(false);
@@ -82,6 +131,19 @@ export function AddToiletPage() {
     genderNeutral ? "gender-neutral" : null,
   ].filter((value): value is "wheelchair" | "baby-changing" | "gender-neutral" => Boolean(value));
 
+  const selectedDays = daysOfWeek.filter((day) => schedule[day].enabled);
+  const openingHours = openAllDay
+    ? "Open 24/7"
+    : selectedDays
+        .map((day) => {
+          const daySchedule = schedule[day];
+
+          return `${day} ${formatTimeLabel(daySchedule.opensAt)} - ${formatTimeLabel(
+            daySchedule.closesAt,
+          )}`;
+        })
+        .join(" · ");
+
   const canSubmit =
     Boolean(user) &&
     Boolean(pinLocation) &&
@@ -90,6 +152,19 @@ export function AddToiletPage() {
     description.trim().length >= 10 &&
     openingHours.trim().length >= 3 &&
     submitState !== "saving";
+
+  function updateDaySchedule(
+    day: DayName,
+    nextSchedule: Partial<DaySchedule>,
+  ) {
+    setSchedule((currentSchedule) => ({
+      ...currentSchedule,
+      [day]: {
+        ...currentSchedule[day],
+        ...nextSchedule,
+      },
+    }));
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -241,16 +316,97 @@ export function AddToiletPage() {
               />
             </label>
 
-            <label className="md:col-span-2">
-              <span className="text-sm font-semibold text-slate-900">Opening hours</span>
-              <input
-                type="text"
-                value={openingHours}
-                onChange={(event) => setOpeningHours(event.target.value)}
-                placeholder="e.g. Open daily · 7am to 10pm"
-                className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
-              />
-            </label>
+            <div className="md:col-span-2 rounded-[2rem] border border-slate-200 bg-slate-50 p-5">
+              <div className="flex items-center justify-between gap-4 rounded-2xl bg-white px-4 py-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Open 24/7</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Hide the day-by-day schedule when this is always open.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={openAllDay}
+                  onChange={(event) => setOpenAllDay(event.target.checked)}
+                  className="h-5 w-5 accent-slate-950"
+                />
+              </div>
+
+              {!openAllDay ? (
+                <div className="mt-4 space-y-3">
+                  <p className="text-sm font-semibold text-slate-900">Opening days</p>
+                  {daysOfWeek.map((day) => {
+                    const daySchedule = schedule[day];
+
+                    return (
+                      <div
+                        key={day}
+                        className="rounded-2xl border border-slate-200 bg-white px-4 py-4"
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <label className="flex items-center gap-3 text-sm font-medium text-slate-800">
+                            <input
+                              type="checkbox"
+                              checked={daySchedule.enabled}
+                              onChange={(event) =>
+                                updateDaySchedule(day, { enabled: event.target.checked })
+                              }
+                              className="h-5 w-5 accent-slate-950"
+                            />
+                            <span>{day}</span>
+                          </label>
+                          {daySchedule.enabled ? (
+                            <span className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
+                              Open
+                            </span>
+                          ) : null}
+                        </div>
+
+                        {daySchedule.enabled ? (
+                          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <label>
+                              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                                From
+                              </span>
+                              <input
+                                type="time"
+                                value={daySchedule.opensAt}
+                                onChange={(event) =>
+                                  updateDaySchedule(day, { opensAt: event.target.value })
+                                }
+                                className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none"
+                              />
+                            </label>
+                            <label>
+                              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                                To
+                              </span>
+                              <input
+                                type="time"
+                                value={daySchedule.closesAt}
+                                onChange={(event) =>
+                                  updateDaySchedule(day, { closesAt: event.target.value })
+                                }
+                                className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none"
+                              />
+                            </label>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  Preview
+                </p>
+                <p className="mt-2 text-sm text-slate-700">
+                  {openingHours || "Choose at least one open day or mark it as open 24/7."}
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="mt-6 rounded-[2rem] border border-slate-200 bg-slate-50 p-5">
