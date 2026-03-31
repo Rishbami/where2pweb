@@ -116,7 +116,7 @@ export async function createToilet(
       lng: input.location.lng,
     },
     accessibility: input.accessibility,
-    rating: 3,
+    rating: 0,
     reviewCount: 0,
     photosCount: 0,
     searchKeywords: buildSearchKeywords(input),
