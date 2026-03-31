@@ -4,16 +4,28 @@ let googleMapsPromise: Promise<void> | null = null;
 
 export type GoogleMapMarker = {
   setMap: (map: GoogleMapInstance | null) => void;
+  setPosition: (position: { lat: number; lng: number }) => void;
   addListener: (eventName: string, handler: () => void) => void;
 };
 
 export type GoogleMapInstance = {
   panTo: (position: { lat: number; lng: number }) => void;
   fitBounds: (bounds: GoogleLatLngBounds, padding?: number) => void;
+  addListener: (
+    eventName: string,
+    handler: (event: GoogleMapMouseEvent) => void,
+  ) => void;
 };
 
 export type GoogleLatLngBounds = {
   extend: (position: { lat: number; lng: number }) => void;
+};
+
+export type GoogleMapMouseEvent = {
+  latLng: {
+    lat: () => number;
+    lng: () => number;
+  } | null;
 };
 
 type GoogleMapsRuntime = {
@@ -32,8 +44,9 @@ type GoogleMapsRuntime = {
   ) => GoogleMapInstance;
   Marker: new (options: {
     position: { lat: number; lng: number };
-    map: GoogleMapInstance;
+    map?: GoogleMapInstance;
     title: string;
+    draggable?: boolean;
     icon?: {
       path: string | number;
       scale: number;

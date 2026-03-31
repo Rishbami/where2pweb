@@ -1,15 +1,21 @@
 "use client";
 
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
   getFirestore,
+  serverTimestamp,
   type DocumentData,
 } from "firebase/firestore/lite";
 import { getFirebaseApp } from "@/lib/firebase/client";
-import { firestoreCollections, type ToiletRecord } from "@/lib/toilets";
+import {
+  firestoreCollections,
+  type CreateToiletInput,
+  type ToiletRecord,
+} from "@/lib/toilets";
 
 export function getFirestoreDb() {
   return getFirestore(getFirebaseApp());
@@ -81,4 +87,46 @@ export async function fetchToiletById(id: string) {
   }
 
   return mapFirestoreToilet(snapshot.id, snapshot.data());
+}
+
+function buildSearchKeywords(input: CreateToiletInput) {
+  return [
+    input.name,
+    input.address,
+    input.description,
+    ...input.accessibility,
+  ]
+    .join(" ")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/i)
+    .filter(Boolean);
+}
+
+export async function createToilet(
+  input: CreateToiletInput,
+  user: { uid: string; email: string | null },
+) {
+  const payload = {
+    name: input.name.trim(),
+    description: input.description.trim(),
+    address: input.address.trim(),
+    openingHours: input.openingHours.trim(),
+    location: {
+      lat: input.location.lat,
+      lng: input.location.lng,
+    },
+    accessibility: input.accessibility,
+    rating: 3,
+    reviewCount: 0,
+    photosCount: 0,
+    searchKeywords: buildSearchKeywords(input),
+    createdByUserId: user.uid,
+    createdByEmail: user.email,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+
+  const docRef = await addDoc(collection(getFirestoreDb(), firestoreCollections.toilets), payload);
+
+  return docRef.id;
 }

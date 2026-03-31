@@ -19,6 +19,8 @@ export const firestoreStructure = {
       openingHours: "string",
       photosCount: "number",
       searchKeywords: ["string"],
+      createdByUserId: "string",
+      createdByEmail: "string | null",
       createdAt: "Timestamp",
       updatedAt: "Timestamp",
     },

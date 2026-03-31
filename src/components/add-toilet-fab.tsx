@@ -16,12 +16,7 @@ export function AddToiletFab() {
       <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-950 text-2xl leading-none text-white">
         +
       </span>
-      <span className="flex flex-col leading-tight">
-        <span>Add toilet</span>
-        <span className="text-xs font-medium text-slate-500">
-          {user ? "Start workflow" : "Login required"}
-        </span>
-      </span>
+      <span>{user ? "Add toilet" : "Log in to add toilet"}</span>
     </Link>
   );
 }
