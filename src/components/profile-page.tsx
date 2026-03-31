@@ -1,29 +1,59 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { AuthCard } from "@/components/auth-card";
 import { useAuth } from "@/components/auth-provider";
-
-const recentActivity = [
-  {
-    title: "Reviewed Piccadilly Gardens",
-    meta: "Clean and easy to find near the tram stop",
-    when: "2 days ago",
-  },
-  {
-    title: "Added Central Library photos",
-    meta: "Helpful angle for the main entrance toilets",
-    when: "1 week ago",
-  },
-  {
-    title: "Added new toilet at Arndale",
-    meta: "Family-friendly location with baby-changing",
-    when: "2 weeks ago",
-  },
-];
+import { fetchProfileStats } from "@/lib/firebase/firestore";
 
 export function ProfilePage() {
   const { user, isLoading } = useAuth();
+  const [stats, setStats] = useState({
+    reviewCount: 0,
+    photoCount: 0,
+    toiletsAddedCount: 0,
+  });
+  const [statsState, setStatsState] = useState<"idle" | "loading" | "ready" | "error">(
+    "idle",
+  );
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadStats() {
+      if (!user) {
+        setStats({
+          reviewCount: 0,
+          photoCount: 0,
+          toiletsAddedCount: 0,
+        });
+        setStatsState("idle");
+        return;
+      }
+
+      try {
+        setStatsState("loading");
+        const nextStats = await fetchProfileStats(user.uid);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setStats(nextStats);
+        setStatsState("ready");
+      } catch {
+        if (!isCancelled) {
+          setStatsState("error");
+        }
+      }
+    }
+
+    void loadStats();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -92,15 +122,17 @@ export function ProfilePage() {
 
         <div className="grid border-b border-slate-200 sm:grid-cols-3">
           <div className="px-6 py-6 text-center sm:px-8">
-            <p className="text-3xl font-semibold text-slate-950">23</p>
+            <p className="text-3xl font-semibold text-slate-950">{stats.reviewCount}</p>
             <p className="mt-1 text-sm text-slate-500">Reviews</p>
           </div>
           <div className="border-t border-slate-200 px-6 py-6 text-center sm:border-l sm:border-t-0 sm:px-8">
-            <p className="text-3xl font-semibold text-slate-950">7</p>
+            <p className="text-3xl font-semibold text-slate-950">{stats.photoCount}</p>
             <p className="mt-1 text-sm text-slate-500">Photos</p>
           </div>
           <div className="border-t border-slate-200 px-6 py-6 text-center sm:border-l sm:border-t-0 sm:px-8">
-            <p className="text-3xl font-semibold text-slate-950">2</p>
+            <p className="text-3xl font-semibold text-slate-950">
+              {stats.toiletsAddedCount}
+            </p>
             <p className="mt-1 text-sm text-slate-500">Toilets added</p>
           </div>
         </div>
@@ -109,18 +141,48 @@ export function ProfilePage() {
           <div>
             <h2 className="text-xl font-semibold text-slate-950">Recent activity</h2>
             <div className="mt-5 space-y-4">
-              {recentActivity.map((item) => (
-                <div
-                  key={`${item.title}-${item.when}`}
-                  className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4"
-                >
-                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{item.meta}</p>
-                  <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
-                    {item.when}
-                  </p>
+              {statsState === "loading" ? (
+                <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                  Loading live account stats...
                 </div>
-              ))}
+              ) : null}
+
+              {statsState === "error" ? (
+                <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  We couldn&apos;t load your live stats just now.
+                </div>
+              ) : null}
+
+              {statsState !== "loading" && statsState !== "error" ? (
+                <>
+                  <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {stats.reviewCount} review{stats.reviewCount === 1 ? "" : "s"} written
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      Your account stats are now coming from live Firebase review data.
+                    </p>
+                  </div>
+                  <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {stats.photoCount} photo{stats.photoCount === 1 ? "" : "s"} uploaded
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      Photo count is calculated from the review photos linked to your account.
+                    </p>
+                  </div>
+                  <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {stats.toiletsAddedCount} toilet
+                      {stats.toiletsAddedCount === 1 ? "" : "s"} added
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      Toilet ownership is pulled from the listings created with your Firebase
+                      account.
+                    </p>
+                  </div>
+                </>
+              ) : null}
             </div>
           </div>
 

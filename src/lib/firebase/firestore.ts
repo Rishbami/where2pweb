@@ -149,6 +149,47 @@ export async function fetchReviewsByToiletId(toiletId: string) {
     .sort((a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0));
 }
 
+export async function fetchReviewsByUserId(userId: string) {
+  const snapshot = await getDocs(
+    query(
+      collection(getFirestoreDb(), firestoreCollections.reviews),
+      where("userId", "==", userId),
+    ),
+  );
+
+  return snapshot.docs
+    .map((item) => mapFirestoreReview(item.id, item.data()))
+    .filter((item): item is ReviewRecord => item !== null)
+    .sort((a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0));
+}
+
+export async function fetchToiletsByCreatorId(userId: string) {
+  const snapshot = await getDocs(
+    query(
+      collection(getFirestoreDb(), firestoreCollections.toilets),
+      where("createdByUserId", "==", userId),
+    ),
+  );
+
+  return snapshot.docs
+    .map((item) => mapFirestoreToilet(item.id, item.data()))
+    .filter((item): item is ToiletRecord => item !== null)
+    .sort((a, b) => b.photosCount - a.photosCount || b.reviewCount - a.reviewCount);
+}
+
+export async function fetchProfileStats(userId: string) {
+  const [reviews, toilets] = await Promise.all([
+    fetchReviewsByUserId(userId),
+    fetchToiletsByCreatorId(userId),
+  ]);
+
+  return {
+    reviewCount: reviews.length,
+    photoCount: reviews.reduce((total, review) => total + review.photoCount, 0),
+    toiletsAddedCount: toilets.length,
+  };
+}
+
 function buildSearchKeywords(input: CreateToiletInput) {
   return [
     input.name,
