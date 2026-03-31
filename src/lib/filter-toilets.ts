@@ -5,6 +5,10 @@ export type ToiletSearchResult = ToiletRecord & {
   distanceKm: number;
 };
 
+function isUnreviewedToilet(toilet: ToiletRecord) {
+  return toilet.rating === 0 && toilet.reviewCount === 0 && toilet.photosCount === 0;
+}
+
 export function filterToilets(
   toilets: ToiletRecord[],
   filters: ToiletFilters,
@@ -15,7 +19,9 @@ export function filterToilets(
       ...toilet,
       distanceKm: getDistanceInKm(userLocation, toilet.location),
     }))
-    .filter((toilet) => toilet.rating >= filters.minimumRating)
+    .filter(
+      (toilet) => isUnreviewedToilet(toilet) || toilet.rating >= filters.minimumRating,
+    )
     .filter((toilet) => !filters.wheelchair || toilet.accessibility.includes("wheelchair"))
     .filter(
       (toilet) =>
